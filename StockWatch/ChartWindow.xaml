@@ -1,0 +1,365 @@
+﻿<Window x:Class="StockWatch.ChartWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d"
+        Title="ChartTest" 
+        xmlns:ChartLib="clr-namespace:System.Windows.Controls.DataVisualization.Charting;assembly=System.Windows.Controls.DataVisualization.Toolkit" WindowState="Maximized"
+        xmlns:DataVis="clr-namespace:System.Windows.Controls.DataVisualization;assembly=System.Windows.Controls.DataVisualization.Toolkit">
+
+    <Window.Resources>
+        <Style x:Key="SharePriceDataPointStyle" TargetType="{x:Type ChartLib:LineDataPoint}">
+            <Setter Property="Background" Value="BlueViolet"/>
+            <Setter Property="Width" Value="4"></Setter>
+            <Setter Property="Height" Value="4"></Setter>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ChartLib:LineDataPoint">
+                        <Grid x:Name="Root" Opacity="1">
+                            <ToolTipService.ToolTip>
+                                <StackPanel Margin="2,2,2,2">
+                                    <ContentControl Content="{TemplateBinding IndependentValue}" ContentStringFormat="{}{0:MMMM d, yyyy}"/>
+                                    <ContentControl Content="{TemplateBinding DependentValue}" ContentStringFormat="Price {0:c}"/>
+                                </StackPanel>
+                            </ToolTipService.ToolTip>
+                            <Ellipse StrokeThickness="2" Stroke="BlueViolet" Fill="LightGreen"/>
+                        </Grid>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style TargetType="Grid" x:Key="GridStyle">
+            <Setter Property="Background" Value="Transparent"></Setter>
+            <Setter Property="ShowGridLines" Value="False"></Setter>
+        </Style>
+
+        <Style TargetType="DataVis:Legend" x:Key="LegendStyle">
+            <Setter Property="Width" Value="150" />
+            <Setter Property="Margin" Value="10,0,0,0" />
+            <Setter Property="Height" Value="180" />
+            <Setter Property="Background" Value="#DDdddd" />
+            <Setter Property="BorderThickness" Value="0" />
+        </Style>
+
+        <!-- s. https://docs.microsoft.com/en-us/dotnet/framework/wpf/controls/how-to-change-the-horizontal-alignment-of-a-column-in-a-listview -->
+        <Style TargetType="ListViewItem">
+            <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+            <!-- Displaying the average in bold -->
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding Path=YearOrAvg}" Value="Average">
+                    <Setter Property="FontWeight" Value="SemiBold" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding Path=YearOrAvg}" Value="Average (5Y)">
+                    <Setter Property="FontWeight" Value="Bold" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding Path=YearOrAvg}" Value="Average (3Y)">
+                    <Setter Property="FontWeight" Value="Bold" />
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+    </Window.Resources>
+
+    <Grid>
+        <TabControl>
+            <TabItem Header="Charts" Width="100">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition></RowDefinition>
+                        <RowDefinition></RowDefinition>
+                        <RowDefinition></RowDefinition>
+                    </Grid.RowDefinitions>
+
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition></ColumnDefinition>
+                        <ColumnDefinition></ColumnDefinition>
+                    </Grid.ColumnDefinitions>
+
+                    <!-- share price and book value-->
+                    <ChartLib:Chart Name="ChartSharePrice" Grid.Row="0" Grid.Column="0" 
+                                    PlotAreaStyle="{StaticResource GridStyle}"
+                                    LegendStyle="{StaticResource LegendStyle}">
+                        <ChartLib:Chart.Axes>
+                            <ChartLib:LinearAxis Minimum="0" Orientation="Y"></ChartLib:LinearAxis>
+                        </ChartLib:Chart.Axes>
+
+                        <ChartLib:LineSeries Name="LineSeriesSharePrice" IndependentValuePath="Key" DependentValuePath="Value" 
+                                                ItemsSource="{Binding [0]}" 
+                                                Background="Green"
+                                                DataPointStyle="{StaticResource SharePriceDataPointStyle}"/>
+                        <ChartLib:LineSeries Name="LineSeriesBookValue" IndependentValuePath="Key" DependentValuePath="Value" 
+                                                ItemsSource="{Binding [1]}" IsSelectionEnabled="True"/>
+                    </ChartLib:Chart>
+
+                    <!-- Earnings per share, free cash flow per share, dividends per share-->
+                    <ChartLib:Chart Name="ChartPerShare" Grid.Row="1" Grid.Column="0" MouseWheel="Chart_MouseWheel"
+                                    PlotAreaStyle="{StaticResource GridStyle}"
+                                    LegendStyle="{StaticResource LegendStyle}">
+                        <ChartLib:Chart.Axes>
+                            <ChartLib:LinearAxis Orientation="Y"></ChartLib:LinearAxis>
+                        </ChartLib:Chart.Axes>
+                        
+                        <ChartLib:LineSeries Name="CharLineEarningsPerShare" DependentValuePath="Value" 
+                                             IndependentValuePath="Key" ItemsSource="{Binding [0]}"/>
+                        <ChartLib:LineSeries Name="CharLineFreeCashFlowPerShare" DependentValuePath="Value" 
+                                             IndependentValuePath="Key" ItemsSource="{Binding [1]}"/>
+                        <ChartLib:LineSeries Name="CharLineDividendsPerShare" DependentValuePath="Value" 
+                                             IndependentValuePath="Key" ItemsSource="{Binding [2]}"/>
+                    </ChartLib:Chart>
+
+                    <!-- Price to earnings/book value chart -->
+                    <ChartLib:Chart Name="ChartPriceRatios" Grid.Row="2" Grid.Column="0" MouseWheel="Chart_MouseWheel"
+                                    PlotAreaStyle="{StaticResource GridStyle}"
+                                    LegendStyle="{StaticResource LegendStyle}">
+                        <ChartLib:Chart.Axes>
+                            <ChartLib:LinearAxis Orientation="Y"></ChartLib:LinearAxis>
+                        </ChartLib:Chart.Axes>
+                        <ChartLib:LineSeries Name="CharLinePriceToEarnings" DependentValuePath="Value" IndependentValuePath="Key" ItemsSource="{Binding [0]}"/>
+                        <ChartLib:LineSeries Name="CharLinePriceToBookValue" DependentValuePath="Value" IndependentValuePath="Key" ItemsSource="{Binding [1]}"/>
+                    </ChartLib:Chart>
+
+                    <!-- Revenue, net income -->
+                    <ChartLib:Chart Name="ChartRevenue" Grid.Row="2" Grid.Column="1" MouseWheel="Chart_MouseWheel"
+                                    PlotAreaStyle="{StaticResource GridStyle}" 
+                                    LegendStyle="{StaticResource LegendStyle}">
+                        <ChartLib:Chart.Axes>
+                            <ChartLib:LinearAxis Orientation="Y"></ChartLib:LinearAxis>
+                        </ChartLib:Chart.Axes>
+                        <ChartLib:LineSeries Name="CharLineRevenue" DependentValuePath="Value" IndependentValuePath="Key" ItemsSource="{Binding [0]}"/>
+                        <ChartLib:LineSeries Name="CharLineNetIncome" DependentValuePath="Value" IndependentValuePath="Key" ItemsSource="{Binding [1]}"/>
+                        <ChartLib:LineSeries Name="CharLineFreeCashFlow" DependentValuePath="Value" IndependentValuePath="Key" ItemsSource="{Binding [2]}"/>
+                    </ChartLib:Chart>
+
+                    <!-- Enterprise value / market capitalization / debt / cash -->
+                    <ChartLib:Chart Name="ChartEnterpriseValue" Grid.Row="0" Grid.Column="1" MouseWheel="Chart_MouseWheel"
+                                    PlotAreaStyle="{StaticResource GridStyle}"
+                                    LegendStyle="{StaticResource LegendStyle}">
+                        <ChartLib:Chart.Axes>
+                            <ChartLib:LinearAxis Orientation="Y"></ChartLib:LinearAxis>
+                        </ChartLib:Chart.Axes>
+                        <ChartLib:LineSeries Name="CharLineEv"  DependentValuePath="Value" IndependentValuePath="Key" ItemsSource="{Binding [0]}"/>
+                        <ChartLib:LineSeries Name="CharLineCapital" DependentValuePath="Value" IndependentValuePath="Key" ItemsSource="{Binding [1]}"/>
+                        <ChartLib:LineSeries Name="CharLineMc" DependentValuePath="Value" IndependentValuePath="Key" ItemsSource="{Binding [2]}"/>
+                        <ChartLib:LineSeries Name="CharLineDebt" DependentValuePath="Value" IndependentValuePath="Key" ItemsSource="{Binding [3]}"/>
+                        <ChartLib:LineSeries Name="CharLineCash" DependentValuePath="Value" IndependentValuePath="Key" ItemsSource="{Binding [4]}"/>
+                    </ChartLib:Chart>
+
+                    <!-- return on enterprise value, capital and earnings/dividend yields -->
+                    <ChartLib:Chart Name="ChartYields" Grid.Row="1" Grid.Column="1" MouseWheel="Chart_MouseWheel"
+                                    PlotAreaStyle="{StaticResource GridStyle}"
+                                    LegendStyle="{StaticResource LegendStyle}">
+                        <ChartLib:Chart.Axes>
+                            <ChartLib:LinearAxis Orientation="Y"></ChartLib:LinearAxis>
+                        </ChartLib:Chart.Axes>
+                        <ChartLib:LineSeries Name="CharLineReturnOnEV" DependentValuePath="Value" IndependentValuePath="Key" ItemsSource="{Binding [0]}"/>
+                        <ChartLib:LineSeries Name="CharLineReturnOnCapital" DependentValuePath="Value" IndependentValuePath="Key" ItemsSource="{Binding [1]}"/>
+                        <ChartLib:LineSeries Name="CharLineEarningsToPrice" DependentValuePath="Value" IndependentValuePath="Key" ItemsSource="{Binding [2]}"/>
+                        <ChartLib:LineSeries Name="CharLineDividendsYield" DependentValuePath="Value" IndependentValuePath="Key" ItemsSource="{Binding [3]}"/>
+                    </ChartLib:Chart>
+
+                </Grid>
+            </TabItem>
+
+            <TabItem Name="TabIntrinsicValue" Header="Intrinsic Value" Width="100">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition></RowDefinition>
+                        <RowDefinition></RowDefinition>
+                        <RowDefinition></RowDefinition>
+                    </Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition></ColumnDefinition>
+                        <ColumnDefinition></ColumnDefinition>
+                        <ColumnDefinition></ColumnDefinition>
+                        <ColumnDefinition></ColumnDefinition>
+                    </Grid.ColumnDefinitions>
+
+                    <!-- Data overview for intrinsic value calculations -->
+                    <ListView Name="LvIntrOverview" Grid.Row="0" Grid.Column="0" Grid.RowSpan="3" ItemsSource="{Binding Path=Data}" Margin="5,0,0,0">
+                        <ListView.View>
+                            <GridView>
+                                <GridViewColumn Header="Year" DisplayMemberBinding="{Binding YearOrAvg}"></GridViewColumn>
+                                <GridViewColumn Header="Dividends">
+                                    <GridViewColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Text="{Binding Dividends, StringFormat=C}" TextAlignment="Right" />
+                                        </DataTemplate>
+                                    </GridViewColumn.CellTemplate>
+                                </GridViewColumn>
+                                <GridViewColumn Header="Cash Flow">
+                                    <GridViewColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Text="{Binding FreeCashFlowPerShare, StringFormat=C}" TextAlignment="Right" />
+                                        </DataTemplate>
+                                    </GridViewColumn.CellTemplate>
+                                </GridViewColumn>
+                                <GridViewColumn Header="Share Price">
+                                    <GridViewColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Text="{Binding SharePrice, StringFormat=C}" TextAlignment="Right" />
+                                        </DataTemplate>
+                                    </GridViewColumn.CellTemplate>
+                                </GridViewColumn>
+                                <GridViewColumn Header="Net Income">
+                                    <GridViewColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Text="{Binding NetIncome, StringFormat=C}" TextAlignment="Right" />
+                                        </DataTemplate>
+                                    </GridViewColumn.CellTemplate>
+                                </GridViewColumn>
+                            </GridView>
+                        </ListView.View>
+                    </ListView>
+
+                    <StackPanel Grid.Row="0" Grid.Column="1" Grid.RowSpan="3" Grid.ColumnSpan="3" Margin="20,10,0,0" Orientation="Horizontal">
+                        <StackPanel Margin="0,0,0,0">
+                            <!-- Multi period dividend discount model (5 Year Plan!) -->
+                            <GroupBox Name = "GBMpDivDiscModel"  Header="Multi-Period Dividend Discount Model" 
+                                      Width="300" VerticalAlignment="Top" HorizontalAlignment="Left" FontSize="14" BorderThickness="2">
+                                <StackPanel Name="SPMpDivDiscModel" Margin="0,10,0,0">
+                                    <Label Content="{Binding ExpectedDividendYear1}"
+                                                ContentStringFormat="Expected Dividend Y1: {0:c}"></Label>
+                                    <Slider Value="{Binding ExpectedDividendYear1}" 
+                                            Minimum ="0" Maximum="{Binding DividendSliderMax}"></Slider>
+
+                                    <Label Content="{Binding ExpectedDividendYear2}"
+                                                ContentStringFormat="Expected Dividend Y2: {0:c}"></Label>
+                                    <Slider Value="{Binding ExpectedDividendYear2}"
+                                            Minimum ="0" Maximum="{Binding DividendSliderMax}"></Slider>
+
+                                    <Label Content="{Binding ExpectedDividendYear3}"
+                                                ContentStringFormat="Expected Dividend Y3: {0:c}"></Label>
+                                    <Slider Value="{Binding ExpectedDividendYear3}"
+                                            Minimum ="0" Maximum="{Binding DividendSliderMax}"></Slider>
+
+                                    <Label Content="{Binding ExpectedDividendYear4}"
+                                                ContentStringFormat="Expected Dividend Y4: {0:c}"></Label>
+                                    <Slider Value="{Binding ExpectedDividendYear4}"
+                                            Minimum ="0" Maximum="{Binding DividendSliderMax}"></Slider>
+
+                                    <Label Content="{Binding ExpectedDividendYear5}"
+                                                ContentStringFormat="Expected Dividend Y5: {0:c}"></Label>
+                                    <Slider Value="{Binding ExpectedDividendYear5}"
+                                            Minimum ="0" Maximum="{Binding DividendSliderMax}"></Slider>
+
+                                    <Label Content="{Binding DesiredRateOfReturn}"
+                                                ContentStringFormat="Desired Rate of Return: {0:N}%"></Label>
+                                    <Slider Value="{Binding DesiredRateOfReturn}" Minimum="6" Maximum="20"></Slider>
+
+                                    <Label Content="{Binding ExpectedSellPrice}"
+                                                ContentStringFormat="Expected Sellprice: {0:c}"></Label>
+                                    <Slider Value="{Binding ExpectedSellPrice}" Minimum="0.1" Maximum="{Binding SellPriceSliderMax}"></Slider>
+
+                                    <Label Content="{Binding IntrinsicSharePrice}" FontWeight="ExtraBold" Margin="0,10,0,0"
+                                                ContentStringFormat="Intrinsic Value: {0:c}" Foreground="{Binding IntrinsicForeground}"></Label>
+
+                                    <Label Content="{Binding SharePrice}" FontWeight="Bold"
+                                                ContentStringFormat="Current Price: {0:c}"></Label>
+                                </StackPanel>
+                            </GroupBox>
+                    
+                            <!-- Dividend Discount Model -->
+                            <GroupBox Name="GBDivDiscModel" Header="Dividend Discount Model" Width="300" VerticalAlignment="Top" HorizontalAlignment="Left"
+                                        Margin="0,40,0,0" FontSize="14" BorderThickness="2">
+                                <StackPanel Name="SPDivDiscModel" Margin="0,10,0,0">
+                                    <Label Content="{Binding ExpectedDividend}"
+                                                ContentStringFormat="Expected Dividend: {0:c}"></Label>
+                                    <Slider Name="SliderExpectedDividend" Value="{Binding ExpectedDividend}"></Slider>
+
+                                    <Label Content="{Binding DesiredRateOfReturn}"
+                                                ContentStringFormat="Desired Rate of Return: {0:N}%"></Label>
+                                    <Slider Value="{Binding DesiredRateOfReturn}" Minimum="6" Maximum="20"></Slider>
+
+                                    <Label Content="{Binding DividendGrowthRate}"
+                                                ContentStringFormat="Dividend Growth Rate: {0:N}%"></Label>
+                                    <Slider Value="{Binding DividendGrowthRate}" Minimum="1" Maximum="20"></Slider>
+
+                                    <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
+                                        <Label Content="{Binding IntrinsicSharePrice}" FontWeight="ExtraBold"
+                                               ContentStringFormat="Intrinsic Value: {0:c}" Foreground="{Binding IntrinsicForeground}"></Label>
+                                    </StackPanel>
+                                    <StackPanel Orientation="Horizontal">
+                                        <Label Content="{Binding SharePrice}" FontWeight="Bold"
+                                               ContentStringFormat="Current Price: {0:c}"></Label>
+                                    </StackPanel>
+                                </StackPanel>
+                            </GroupBox>
+                        </StackPanel>
+
+                        <!-- Discounted Cash Flow (5 Year Plan!) -->
+                        <GroupBox Name="GBCashFlowDiscModelVM" Header="Discounted Cash Flow" Grid.Row="0" Grid.Column="2" Grid.RowSpan="2" MinWidth="300" 
+                                    VerticalAlignment="Top" HorizontalAlignment="Left" Margin="40,0,0,0" FontSize="14" BorderThickness="2">
+                            <StackPanel Margin="0,10,0,0">
+                                <Label Content="{Binding ExpectedCashflowYear1}"
+                                            ContentStringFormat="Expected Cashflow Y1: {0:c}"></Label>
+                                <Slider Value="{Binding ExpectedCashflowYear1}" 
+                                        Minimum ="0" Maximum="{Binding CashflowSliderMax}"></Slider>
+
+                                <Label Content="{Binding ExpectedCashflowYear2}"
+                                            ContentStringFormat="Expected Cashflow Y2: {0:c}"></Label>
+                                <Slider Value="{Binding ExpectedCashflowYear2}"
+                                        Minimum ="0" Maximum="{Binding CashflowSliderMax}"></Slider>
+
+                                <Label Content="{Binding ExpectedCashflowYear3}"
+                                            ContentStringFormat="Expected Cashflow Y3: {0:c}"></Label>
+                                <Slider Value="{Binding ExpectedCashflowYear3}"
+                                        Minimum ="0" Maximum="{Binding CashflowSliderMax}"></Slider>
+
+                                <Label Content="{Binding ExpectedCashflowYear4}"
+                                            ContentStringFormat="Expected Cashflow Y4: {0:c}"></Label>
+                                <Slider Value="{Binding ExpectedCashflowYear4}"
+                                        Minimum ="0" Maximum="{Binding CashflowSliderMax}"></Slider>
+
+                                <Label Content="{Binding ExpectedCashflowYear5}"
+                                            ContentStringFormat="Expected Cashflow Y5: {0:c}"></Label>
+                                <Slider Value="{Binding ExpectedCashflowYear5}"
+                                        Minimum ="0" Maximum="{Binding CashflowSliderMax}"></Slider>
+
+                                <Label Content="{Binding DesiredRateOfReturn}"
+                                            ContentStringFormat="Desired Rate of Return: {0:N}%"></Label>
+                                <Slider Value="{Binding DesiredRateOfReturn}" Minimum="6" Maximum="20"></Slider>
+
+                                <Label Content="{Binding TerminalGrowthRate}"
+                                            ContentStringFormat="Terminal Growth Rate: {0:N}%"></Label>
+                                <Slider Value="{Binding TerminalGrowthRate}" Minimum="0" Maximum="10"></Slider>
+
+                                <Label Content="{Binding IntrinsicSharePrice}" FontWeight="ExtraBold" Margin="0,10,0,0"
+                                            ContentStringFormat="Intrinsic Value: {0:c}" Foreground="{Binding IntrinsicForeground}"></Label>
+
+                                <Label Content="{Binding SharePrice}" FontWeight="Bold"
+                                            ContentStringFormat="Current Price: {0:c}"></Label>
+                            </StackPanel>
+                        </GroupBox>
+
+                        <!--Residual income model-->
+                        <GroupBox Name="GBResidualIncomeModelVM" Header="Residual Income Model" Grid.Row="0" Grid.Column="3" Grid.RowSpan="2" MinWidth="300" 
+                                    VerticalAlignment="Top" HorizontalAlignment="Left" Margin="40,0,0,0" FontSize="14" BorderThickness="2">
+                            <StackPanel Margin="0,10,0,0">
+
+                                <Label Content="{Binding DesiredRateOfReturn}"
+                                            ContentStringFormat="Desired Rate of Return: {0:N}%"></Label>
+                                <Slider Value="{Binding DesiredRateOfReturn}" Minimum="6" Maximum="20"></Slider>
+
+                                <StackPanel Orientation="Horizontal">
+                                    <Label Content="{Binding IntrinsicSharePrice}" FontWeight="ExtraBold" Margin="0,10,0,0"
+                                           ContentStringFormat="Intrinsic Value: {0:c}" Foreground="{Binding IntrinsicForeground}"></Label>
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal">
+                                    <Label Content="{Binding SharePrice}" FontWeight="Bold"
+                                           ContentStringFormat="Current Price: {0:c}"></Label>
+                                </StackPanel>
+                            </StackPanel>
+                        </GroupBox>
+                    </StackPanel>
+                </Grid>
+            </TabItem>
+
+            <TabItem Name="TabFinancialData" Header="Raw cvs" Width="100">
+                <RichTextBox Name="richTxtBoxFinancials" VerticalScrollBarVisibility="Visible">
+                </RichTextBox>
+            </TabItem>
+            
+        </TabControl>
+    </Grid>
+</Window>
