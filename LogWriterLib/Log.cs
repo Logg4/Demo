@@ -10,7 +10,9 @@ namespace LogWriterLib
     public static class Log
     {
         private static Logger _logger = null;
+        private static string _logFile = "";
         private static string _assemblyAndVersionStr = "LogWriterLib";
+        private static readonly object _lock = new object();
 
         static Log()
         {
@@ -26,21 +28,46 @@ namespace LogWriterLib
         }
 
 
-        /// <summary>
-        /// 
-        /// </summary>
-        public static Logger Logger
+        public static string LogFile
         {
             get
             {
-                SetCaller();
-                return _logger;
+                return _logFile;
             }
             set
             {
                 if (value != null)
                 {
-                    _logger = value;
+                    _logFile = value;
+                    lock (_lock)
+                    {
+                        Logger = new Logger(_logFile);
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        private static Logger Logger
+        {
+            get
+            {
+                lock (_lock)
+                {
+                    SetCaller();
+                    return _logger;
+                }
+            }
+            set
+            {
+                lock (_lock)
+                {
+                    if (value != null)
+                    {
+                        _logger = value;
+                    }
                 }
             }
         }
@@ -58,7 +85,10 @@ namespace LogWriterLib
         {
             if (Logger != null && IsDebug)
             {
-                Logger.Debug(msg);
+                lock (_lock)
+                {
+                    Logger.Debug(msg);
+                }
             }
         }
 
@@ -71,7 +101,10 @@ namespace LogWriterLib
         {
             if (Logger != null && IsDebug)
             {
-                Logger.Debug(msg, e);
+                lock (_lock)
+                {
+                    Logger.Debug(msg, e);
+                }
             }
         }
 
@@ -83,8 +116,10 @@ namespace LogWriterLib
         {
             if (Logger != null)
             {
-                //SetCaller();
-                Logger.Info(msg);
+                lock (_lock)
+                {
+                    Logger.Info(msg);
+                }
             }
         }
 
@@ -97,7 +132,10 @@ namespace LogWriterLib
         {
             if (Logger != null)
             {
-                Logger.Info(msg, e);
+                lock (_lock)
+                {
+                    Logger.Info(msg, e);
+                }
             }
         }
 
@@ -109,7 +147,10 @@ namespace LogWriterLib
         {
             if (Logger != null)
             {
-                Logger.Warn(msg);
+                lock (_lock)
+                {
+                    Logger.Warn(msg);
+                }
             }
         }
 
@@ -122,7 +163,10 @@ namespace LogWriterLib
         {
             if (Logger != null)
             {
-                Logger.Warn(msg, e);
+                lock (_lock)
+                {
+                    Logger.Warn(msg, e);
+                }
             }
         }
 
@@ -134,7 +178,10 @@ namespace LogWriterLib
         {
             if (Logger != null)
             {
-                Logger.Error(msg);
+                lock (_lock)
+                {
+                    Logger.Error(msg);
+                }
             }
         }
 
@@ -147,7 +194,10 @@ namespace LogWriterLib
         {
             if (Logger != null)
             {
-                Logger.Error(msg, e);
+                lock (_lock)
+                {
+                    Logger.Error(msg, e);
+                }
             }
         }
 
@@ -168,10 +218,10 @@ namespace LogWriterLib
                 {
                     System.Reflection.MethodBase methodInfo = null;
 
-                    if (stack.FrameCount > 2)
+                    if (stack.FrameCount > 3)
                     {
                         // third in the stack should be the desired method
-                        methodInfo = stack.GetFrame(2).GetMethod();
+                        methodInfo = stack.GetFrame(3).GetMethod();
                         _logger.SetCaller(_assemblyAndVersionStr, methodInfo.ReflectedType.FullName + "." + methodInfo.Name);
                     }
                     else

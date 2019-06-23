@@ -78,6 +78,10 @@ namespace StockWatch.Logic
             short result = 0;
             try
             {
+                if (_stockUnderEvaluation == null || _stockUnderEvaluation.Financials == null)
+                {
+                    return 0;
+                }
                 if (IsLargeEnough())
                 {
                     result++;

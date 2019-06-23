@@ -34,6 +34,7 @@ namespace StockWatch.ViewModel
             try
             {
                 SetLogFile();
+                Log.Info("Start up");
                 foreach (Stock stock in DataAccess.Db.FullRead())
                 {
                     _stockData.Add(new StockDataVM(stock));
@@ -63,7 +64,7 @@ namespace StockWatch.ViewModel
             try
             {
                 string logFile = Path.Combine(Path.GetDirectoryName(Assembly.GetEntryAssembly().Location), "StockWatch.log");
-                Log.Logger = new Logger(logFile);
+                Log.LogFile = logFile;
             }
             catch (Exception x)
             {

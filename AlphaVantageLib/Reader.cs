@@ -44,7 +44,7 @@ namespace AlphaVantageLib
                         client.DefaultRequestHeaders.Accept.Add(new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("application/json"));
 
                         client.BaseAddress = new Uri(functionPath);
-                        HttpResponseMessage response = client.GetAsync(functionPath).GetAwaiter().GetResult();
+                        HttpResponseMessage response = client.GetAsync(functionPath).Result;
                         JObject subObj = GetTimeSeriesObject(response, out expiredKey, out bool error);
                         if (subObj != null)
                         {
@@ -85,7 +85,7 @@ namespace AlphaVantageLib
                         client.DefaultRequestHeaders.Accept.Add(new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("application/json"));
 
                         client.BaseAddress = new Uri(functionPath);
-                        HttpResponseMessage response = client.GetAsync(functionPath).GetAwaiter().GetResult();
+                        HttpResponseMessage response = client.GetAsync(functionPath).Result;
                         JObject subObj = GetTimeSeriesObject(response, out expiredKey, out bool error);
                         if (subObj != null)
                         {
@@ -125,8 +125,8 @@ namespace AlphaVantageLib
                     expiredKey = true;
                     return null;
                 }
-                string name = parsedObject.Properties().Select(p => p.Name).ToList()[1];
-                result = (JObject)parsedObject[name];
+
+                result = (JObject)parsedObject.Properties().ElementAt(1).Value;
             }
             return result;
         }

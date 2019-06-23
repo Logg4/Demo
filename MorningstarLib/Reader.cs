@@ -80,7 +80,7 @@ namespace MorningstarLib
                         client.DefaultRequestHeaders.Referrer = new Uri(referrer);
                     }
 
-                    HttpResponseMessage response = client.GetAsync(url).GetAwaiter().GetResult();
+                    HttpResponseMessage response = client.GetAsync(url).Result;
 
                     if (response.IsSuccessStatusCode && 0 < response.Content.Headers.ContentLength)
                     {
